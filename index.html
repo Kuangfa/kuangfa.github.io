@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>个人作品集 · 展示页</title>
+<style>
+  :root{
+    --bg:#f7f8fb;
+    --surface:#ffffff;
+    --ink:#1c2233;
+    --muted:#6b7280;
+    --line:#e8ebf2;
+    --brand:#5b6cff;
+    --brand2:#8a5bff;
+    --shadow:0 10px 30px rgba(30,40,90,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.7;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+  a{color:inherit;text-decoration:none}
+
+  header{
+    position:sticky;top:0;z-index:20;background:rgba(247,248,251,.85);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line);
+  }
+  .nav{display:flex;align-items:center;justify-content:space-between;height:66px}
+  .logo{font-weight:800;font-size:19px;letter-spacing:.5px}
+  .logo b{color:var(--brand)}
+  .nav a.menu{margin-left:26px;color:var(--muted);font-size:14px;font-weight:600}
+  .nav a.menu:hover{color:var(--brand)}
+
+  .hero{padding:88px 0 64px;text-align:center}
+  .badge{
+    display:inline-block;padding:6px 16px;border-radius:999px;font-size:13px;font-weight:600;
+    color:var(--brand);background:#eef0ff;border:1px solid #dfe3ff;margin-bottom:24px;
+  }
+  .hero h1{font-size:clamp(34px,6vw,58px);line-height:1.2;letter-spacing:-1px;font-weight:850}
+  .hero h1 span{
+    background:linear-gradient(100deg,var(--brand),var(--brand2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero p{max-width:600px;margin:22px auto 0;color:var(--muted);font-size:17px}
+  .btns{margin-top:34px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .btn{
+    padding:13px 26px;border-radius:12px;font-weight:700;font-size:15px;transition:.2s;
+  }
+  .btn.primary{background:var(--brand);color:#fff;box-shadow:0 8px 22px rgba(91,108,255,.3)}
+  .btn.primary:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(91,108,255,.4)}
+  .btn.ghost{background:var(--surface);border:1px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--brand);color:var(--brand)}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:64px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px 12px;box-shadow:var(--shadow)}
+  .stat .n{font-size:30px;font-weight:850;color:var(--brand)}
+  .stat .t{color:var(--muted);font-size:13px;margin-top:4px}
+
+  section{padding:64px 0}
+  .head{text-align:center;margin-bottom:40px}
+  .head h2{font-size:32px;font-weight:850;letter-spacing:-.5px}
+  .head p{color:var(--muted);margin-top:10px}
+
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:26px;
+    box-shadow:var(--shadow);transition:.25s;
+  }
+  .card:hover{transform:translateY(-5px);border-color:#dfe3ff}
+  .card .ico{
+    width:46px;height:46px;border-radius:13px;display:grid;place-items:center;
+    font-size:22px;background:#f0f2ff;margin-bottom:16px;
+  }
+  .card h3{font-size:18px;font-weight:750}
+  .card p{color:var(--muted);font-size:14px;margin-top:8px}
+  .tag{
+    display:inline-block;margin-top:14px;padding:4px 11px;border-radius:8px;
+    background:#f4f5f9;color:var(--muted);font-size:12px;font-weight:600;
+  }
+
+  footer{
+    border-top:1px solid var(--line);padding:36px 0;text-align:center;color:var(--muted);font-size:14px;
+  }
+
+  @media(max-width:760px){
+    .grid{grid-template-columns:1fr}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .nav a.menu{display:none}
+    .hero{padding:60px 0 40px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <div class="logo">我的<b>作品集</b></div>
+    <div>
+      <a class="menu" href="#works">作品</a>
+      <a class="menu" href="#about">关于</a>
+      <a class="menu" href="#contact">联系</a>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="badge">✦ 欢迎来到我的主页</div>
+    <h1>把想法<span>变成现实</span>的地方</h1>
+    <p>这是一个可以直接发布到公网的静态展示页示例。把它换成你自己的内容，就能成为作品集、落地页或个人名片。</p>
+    <div class="btns">
+      <a class="btn primary" href="#works">看看作品</a>
+      <a class="btn ghost" href="#contact">联系我</a>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="n">12+</div><div class="t">完成项目</div></div>
+      <div class="stat"><div class="n">3 年</div><div class="t">实践经验</div></div>
+      <div class="stat"><div class="n">8k+</div><div class="t">关注者</div></div>
+      <div class="stat"><div class="n">100%</div><div class="t">热爱驱动</div></div>
+    </div>
+  </div>
+</div>
+
+<section id="works">
+  <div class="wrap">
+    <div class="head">
+      <h2>精选作品</h2>
+      <p>把下面的卡片换成你的真实项目</p>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="ico">🎨</div>
+        <h3>品牌视觉设计</h3>
+        <p>为初创团队打造完整的视觉识别系统，涵盖标志、色彩与物料规范。</p>
+        <span class="tag">设计</span>
+      </div>
+      <div class="card">
+        <div class="ico">📱</div>
+        <h3>移动端应用</h3>
+        <p>从零到一的产品设计与开发，注重体验细节与交互流畅度。</p>
+        <span class="tag">产品</span>
+      </div>
+      <div class="card">
+        <div class="ico">⚡</div>
+        <h3>效率工具</h3>
+        <p>用自动化解决重复劳动，让日常工作流程更快、更省心。</p>
+        <span class="tag">工具</span>
+      </div>
+      <div class="card">
+        <div class="ico">📝</div>
+        <h3>内容创作</h3>
+        <p>长期输出原创内容，累计阅读量可观，擅长把复杂讲简单。</p>
+        <span class="tag">写作</span>
+      </div>
+      <div class="card">
+        <div class="ico">🌐</div>
+        <h3>网站开发</h3>
+        <p>响应式网页与互动页面，兼顾视觉表现与加载性能。</p>
+        <span class="tag">开发</span>
+      </div>
+      <div class="card">
+        <div class="ico">🤝</div>
+        <h3>协作项目</h3>
+        <p>与不同角色协同推进，把想法落地成可交付的成果。</p>
+        <span class="tag">协作</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="about" style="background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <div class="head">
+      <h2>关于我</h2>
+      <p>这里写一段自我介绍，让别人快速了解你</p>
+    </div>
+    <div class="card" style="max-width:720px;margin:0 auto;text-align:center">
+      <p style="font-size:16px;color:var(--muted)">你好！我是这个页面的主人。我喜欢把想法动手做出来，也乐于分享过程中的收获。如果你有有趣的合作或交流，欢迎联系我。</p>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="wrap" style="text-align:center">
+    <div class="head">
+      <h2>保持联系</h2>
+      <p>换成你的邮箱、微信或社交账号</p>
+    </div>
+    <a class="btn primary" href="mailto:hello@example.com">给我发邮件</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">© 2026 我的作品集 · 用 WorkBuddy 发布</div>
+</footer>
+
+</body>
+</html>
