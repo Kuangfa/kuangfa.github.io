@@ -81,6 +81,17 @@
     background:#f4f5f9;color:var(--muted);font-size:12px;font-weight:600;
   }
 
+  .game-card{display:block;overflow:hidden}
+  .game-card .thumb{
+    height:130px;border-radius:12px;margin-bottom:16px;display:grid;place-items:center;
+    font-size:54px;transition:.25s;
+  }
+  .game-card:hover .thumb{transform:scale(1.03)}
+  .game-card .go{margin-top:16px;color:var(--brand);font-size:13px;font-weight:700}
+  .t1{background:linear-gradient(135deg,#1b2a4a,#3a1c5c)}
+  .t2{background:linear-gradient(135deg,#0d3b2e,#155e46)}
+  .t3{background:linear-gradient(135deg,#4a2e0d,#6b4a10)}
+
   footer{
     border-top:1px solid var(--line);padding:36px 0;text-align:center;color:var(--muted);font-size:14px;
   }
@@ -100,6 +111,7 @@
     <div class="logo">我的<b>作品集</b></div>
     <div>
       <a class="menu" href="#works">作品</a>
+      <a class="menu" href="#games">游戏</a>
       <a class="menu" href="#about">关于</a>
       <a class="menu" href="#contact">联系</a>
     </div>
@@ -112,8 +124,8 @@
     <h1>把想法<span>变成现实</span>的地方</h1>
     <p>这是一个可以直接发布到公网的静态展示页示例。把它换成你自己的内容，就能成为作品集、落地页或个人名片。</p>
     <div class="btns">
-      <a class="btn primary" href="#works">看看作品</a>
-      <a class="btn ghost" href="#contact">联系我</a>
+      <a class="btn primary" href="#games">玩游戏</a>
+      <a class="btn ghost" href="#works">看看作品</a>
     </div>
 
     <div class="stats">
@@ -168,6 +180,35 @@
         <p>与不同角色协同推进，把想法落地成可交付的成果。</p>
         <span class="tag">协作</span>
       </div>
+    </div>
+  </div>
+</section>
+
+<section id="games" style="background:#eef0ff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <div class="head">
+      <h2>🎮 在线游戏</h2>
+      <p>纯网页游戏，点开即玩，无需下载</p>
+    </div>
+    <div class="grid">
+      <a class="card game-card" href="game/jimao-3a.html">
+        <div class="thumb t1">🗺️</div>
+        <h3>几猫国产3A大作</h3>
+        <p>Canvas 打造的开放世界冒险，方向盘 + 触控操作，浏览器里就能探索。</p>
+        <div class="go">开始游戏 →</div>
+      </a>
+      <a class="card game-card" href="game/doudizhu.html">
+        <div class="thumb t2">🃏</div>
+        <h3>斗地主</h3>
+        <p>经典三人纸牌玩法，叫地主、出牌、比大小，随时来一局。</p>
+        <div class="go">开始游戏 →</div>
+      </a>
+      <a class="card game-card" href="game/gold-miner.html">
+        <div class="thumb t3">⛏️</div>
+        <h3>黄金矿工</h3>
+        <p>抓住时机放下钩子，抓取金块与钻石，挑战你的手速和判断。</p>
+        <div class="go">开始游戏 →</div>
+      </a>
     </div>
   </div>
 </section>

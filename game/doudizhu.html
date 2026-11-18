@@ -1,0 +1,1395 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0d1512">
+<title>斗地主 · 4399 网页版</title>
+<meta name="description" content="经典斗地主：单文件、零依赖、纯代码绘制，手机也能玩。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230d1512'/%3E%3Ctext x='12' y='46' font-size='38' fill='%23f2ece0'%3E%E2%99%A0%3C/text%3E%3C/svg%3E">
+<style>
+/* style.css — 一张绿色的牌桌，纸牌全部用 CSS 画出来。 */
+:root {
+  --cw: 64px; --ch: 92px;
+  --ink: #0b0f0d;
+  --bone: #f4efe3;
+  --bone-dim: rgba(244, 239, 227, .62);
+  --gold: #ffcf5e;
+  --gold-hot: #ffe9a8;
+  --red: #c8342a;
+  --felt-1: #14503c;
+  --felt-2: #0a2a20;
+  --wood: #4a2f1c;
+  --line: rgba(244, 239, 227, .16);
+  --plate: rgba(8, 16, 13, .72);
+  --f-ui: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --f-num: 'Bahnschrift', 'DIN Alternate', 'Arial Black', system-ui, sans-serif;
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; background: #06110d; color: var(--bone);
+  font-family: var(--f-ui); overflow: hidden; user-select: none;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+#app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+
+/* ---------------- 顶栏 ---------------- */
+.topbar {
+  position: relative; z-index: 6;
+  display: flex; align-items: center; gap: 16px;
+  padding: calc(8px + var(--sat)) 14px 8px;
+  background: linear-gradient(180deg, #12261d, #0a1a14);
+  border-bottom: 1px solid rgba(255, 207, 94, .16);
+  box-shadow: 0 10px 24px -14px #000;
+}
+.brand b {
+  font-size: 19px; letter-spacing: .16em;
+  background: linear-gradient(180deg, #fff6d4, #ffcf5e 55%, #c98a14);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.brand .sub { margin-left: 8px; font-size: 10px; letter-spacing: .18em; color: var(--bone-dim); }
+.stats { display: flex; gap: 8px; margin-left: auto; }
+.stat {
+  display: flex; align-items: baseline; gap: 6px;
+  padding: 5px 10px; border: 1px solid var(--line); border-radius: 3px;
+  background: rgba(255, 255, 255, .035);
+}
+.stat .k { font-size: 10px; letter-spacing: .14em; color: var(--bone-dim); }
+.stat b { font-family: var(--f-num); font-size: 16px; font-variant-numeric: tabular-nums; }
+.stat b.hot { color: var(--gold); }
+.tools { display: flex; gap: 6px; }
+.icobtn {
+  width: 34px; height: 34px; cursor: pointer; font-size: 15px;
+  color: var(--bone); background: rgba(255, 255, 255, .05);
+  border: 1px solid var(--line); border-radius: 3px;
+}
+.icobtn:hover { border-color: rgba(255, 207, 94, .5); color: var(--gold-hot); }
+.icobtn.muted { opacity: .45; }
+
+/* ---------------- 牌桌 ---------------- */
+.table { position: relative; flex: 1; overflow: hidden; }
+.felt {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(120% 80% at 50% 8%, rgba(255, 255, 255, .07), transparent 60%),
+    radial-gradient(140% 100% at 50% 50%, var(--felt-1), var(--felt-2) 72%);
+}
+.felt::after {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, .045) 1px, transparent 1px);
+  background-size: 5px 5px; opacity: .5; pointer-events: none;
+}
+
+/* 座位 */
+.seat { position: absolute; display: flex; align-items: center; gap: 9px; z-index: 4; }
+.seat-left { left: 14px; top: 84px; flex-direction: row; }
+.seat-right { right: 14px; top: 84px; flex-direction: row-reverse; text-align: right; }
+.seat-me { left: 14px; bottom: calc(var(--ch) + 96px); }
+.avatar {
+  width: 46px; height: 46px; flex: 0 0 auto; border-radius: 50%;
+  display: grid; place-items: center;
+  font-weight: 800; font-size: 17px; color: #10201a;
+  border: 2px solid rgba(255, 255, 255, .5);
+  box-shadow: 0 6px 16px -6px #000, inset 0 -3px 8px rgba(0, 0, 0, .22);
+}
+.av0 { background: radial-gradient(circle at 35% 30%, #ffe6a8, #e0a83a 70%); }
+.av1 { background: radial-gradient(circle at 35% 30%, #b9e6ff, #4a97c9 70%); }
+.av2 { background: radial-gradient(circle at 35% 30%, #ffc9d2, #c95a76 70%); }
+.seat.on .avatar { box-shadow: 0 0 0 3px rgba(255, 207, 94, .85), 0 0 26px rgba(255, 190, 70, .55); }
+.meta { display: flex; flex-direction: column; gap: 2px; }
+.meta .nm { font-size: 12.5px; letter-spacing: .06em; }
+.meta .cnt {
+  font-family: var(--f-num); font-size: 12px; color: var(--bone-dim);
+  font-variant-numeric: tabular-nums;
+}
+.meta .cnt::before { content: '剩 '; font-family: var(--f-ui); font-size: 10px; }
+.tag {
+  font-size: 10px; letter-spacing: .12em; padding: 2px 7px; border-radius: 2px;
+  border: 1px solid var(--line); color: var(--bone-dim);
+}
+.tag.landlord { color: #2a1700; background: linear-gradient(180deg, #ffd465, #d18f16); border-color: #ffe9a8; font-weight: 700; }
+.seat.on .meta .nm { color: var(--gold-hot); }
+.thinking { display: none; gap: 3px; }
+.thinking.on { display: flex; }
+.thinking i {
+  width: 4px; height: 4px; border-radius: 50%; background: var(--gold);
+  animation: blink 1s infinite;
+}
+.thinking i:nth-child(2) { animation-delay: .18s; }
+.thinking i:nth-child(3) { animation-delay: .36s; }
+@keyframes blink { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+
+/* 底牌 */
+.bottomarea { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); text-align: center; z-index: 3; }
+.bottomlabel { font-size: 10px; letter-spacing: .22em; color: var(--bone-dim); margin-bottom: 4px; }
+.bottomcards { display: flex; gap: 5px; justify-content: center; }
+
+/* 桌面上的出牌区 */
+.playzone { position: absolute; display: flex; gap: 3px; align-items: center; min-height: 10px; z-index: 3; }
+.pz-left { left: 118px; top: 156px; }
+.pz-right { right: 118px; top: 156px; justify-content: flex-end; }
+.pz-me { left: 50%; transform: translateX(-50%); bottom: calc(var(--ch) + 74px); }
+.phase {
+  position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%);
+  font-size: 12px; letter-spacing: .3em; color: rgba(244, 239, 227, .28);
+  pointer-events: none; white-space: nowrap;
+}
+
+/* ---------------- 纸牌 ---------------- */
+.card {
+  position: relative; width: var(--cw); height: var(--ch); flex: 0 0 auto;
+  background: linear-gradient(160deg, #ffffff, #f2eee2 62%, #e6e0d2);
+  border: 1px solid rgba(0, 0, 0, .28); border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, .35);
+  color: #1b1b20; overflow: hidden;
+  transition: transform .13s cubic-bezier(.2, .8, .2, 1), box-shadow .13s;
+}
+.card .c { position: absolute; display: flex; flex-direction: column; align-items: center; line-height: 1; }
+.card .c.tl { left: 5px; top: 4px; }
+.card .c.br { right: 5px; bottom: 4px; transform: rotate(180deg); }
+.card .c b { font-family: var(--f-num); font-size: calc(var(--cw) * .38); font-weight: 800; letter-spacing: -.03em; line-height: .95; }
+.card .c i { font-style: normal; font-size: calc(var(--cw) * .30); margin-top: 0; line-height: 1; }
+.card .pip {
+  position: absolute; left: 34%; top: 60%; transform: translate(-50%, -50%);
+  font-size: calc(var(--cw) * .56); opacity: .92;
+}
+.card.back {
+  background: linear-gradient(150deg, #1d4f61, #123544 55%, #0d2733);
+  border-color: rgba(0, 0, 0, .45);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .10), 0 2px 5px rgba(0, 0, 0, .35);
+}
+.card.back::after {
+  content: ''; position: absolute; inset: 4px; border-radius: 3px;
+  border: 1px solid rgba(255, 220, 150, .28);
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255, 220, 150, .12) 0 3px, transparent 3px 7px),
+    repeating-linear-gradient(-45deg, rgba(255, 220, 150, .1) 0 3px, transparent 3px 7px);
+}
+.card.red { color: var(--red); }
+.card.black { color: #17171c; }
+.card.joker .jok {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 46%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-family: var(--f-ui); font-weight: 800; line-height: 1.05; text-align: center;
+  font-size: calc(var(--cw) * .30); letter-spacing: 0;
+}
+.card.joker.red .jok { color: var(--red); }
+.card.small { --cw: 44px; --ch: 62px; }
+.card.tiny { --cw: 34px; --ch: 48px; }
+
+.hand { position: absolute; left: 0; right: 0; bottom: calc(62px + var(--sab)); display: flex; justify-content: center; z-index: 5; padding: 0 8px; }
+.hand .card { margin-left: calc(var(--cw) * -0.40); cursor: pointer; }
+.hand .card:first-child { margin-left: 0; }
+.hand .card:hover { transform: translateY(-10px); z-index: 2; }
+.hand .card.sel { transform: translateY(-20px); box-shadow: 0 0 0 2px var(--gold), 0 10px 22px -8px #000; z-index: 3; }
+.hand .card.dealing { animation: dealIn .34s cubic-bezier(.2, .9, .2, 1) both; }
+@keyframes dealIn { from { opacity: 0; transform: translateY(46px) scale(.9); } to { opacity: 1; } }
+
+/* ---------------- 按钮 ---------------- */
+.controls {
+  position: absolute; left: 0; right: 0; bottom: calc(10px + var(--sab));
+  display: flex; justify-content: center; gap: 8px; z-index: 6; padding: 0 10px;
+}
+.btn {
+  cursor: pointer; border: 1px solid var(--line); border-radius: 4px;
+  padding: 11px 20px; min-width: 84px;
+  font: 700 14px/1 var(--f-ui); letter-spacing: .1em; color: var(--bone);
+  background: linear-gradient(180deg, rgba(40, 60, 50, .95), rgba(14, 26, 21, .95));
+  box-shadow: 0 10px 22px -14px #000, inset 0 1px 0 rgba(255, 255, 255, .12);
+  transition: transform .12s, border-color .2s, color .2s, filter .2s;
+}
+.btn:hover { border-color: rgba(255, 207, 94, .55); color: var(--gold-hot); }
+.btn:active { transform: translateY(1px) scale(.99); }
+.btn:disabled { opacity: .34; cursor: not-allowed; transform: none; }
+.btn.primary {
+  background: linear-gradient(180deg, #ffd465, #d18f16 62%, #a0650b);
+  border-color: #ffe9a8; color: #2a1700; text-shadow: 0 1px 0 rgba(255, 255, 255, .35);
+  box-shadow: 0 14px 28px -14px rgba(255, 170, 40, .7), inset 0 1px 0 rgba(255, 255, 255, .5);
+}
+.btn.primary:hover { color: #1a0d00; filter: brightness(1.06); }
+.btn.ghost { background: rgba(255, 255, 255, .04); }
+.btn.big { padding: 14px 26px; font-size: 15px; }
+
+/* ---------------- 浮动文字 / 气泡 ---------------- */
+.bubble {
+  position: absolute; z-index: 9; padding: 6px 12px; border-radius: 3px;
+  font-size: 13px; letter-spacing: .06em; white-space: nowrap;
+  background: rgba(10, 18, 14, .92); border: 1px solid rgba(255, 207, 94, .4);
+  color: var(--gold-hot); box-shadow: 0 12px 26px -14px #000;
+  animation: pop .28s cubic-bezier(.2, .9, .2, 1) both;
+  pointer-events: none;
+}
+@keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.92); } to { opacity: 1; } }
+.toast {
+  position: absolute; left: 50%; top: 34%; transform: translate(-50%, -50%) scale(.95);
+  padding: 10px 18px; border-radius: 4px; z-index: 20; opacity: 0; pointer-events: none;
+  background: rgba(12, 8, 6, .92); border: 1px solid rgba(255, 110, 90, .5);
+  color: #ffb4a6; font-size: 13px; letter-spacing: .06em;
+  transition: opacity .18s, transform .18s;
+}
+.toast.on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.bombflash {
+  position: absolute; inset: 0; z-index: 8; pointer-events: none; opacity: 0;
+  display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 190, 80, .55), rgba(255, 90, 40, .18) 40%, transparent 70%);
+  font-family: var(--f-num); font-size: clamp(28px, 7vw, 64px); color: #fff3c8;
+  text-shadow: 0 4px 0 #8a3a00, 0 0 40px rgba(255, 160, 40, .9);
+  letter-spacing: .06em;
+}
+.bombflash.on { animation: boomFlash .85s ease-out both; }
+@keyframes boomFlash {
+  0% { opacity: 0; transform: scale(.7); }
+  18% { opacity: 1; transform: scale(1.04); }
+  60% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.1); }
+}
+
+/* ---------------- 弹层 ---------------- */
+.modal {
+  position: fixed; inset: 0; z-index: 30; display: none;
+  align-items: center; justify-content: center;
+  background: rgba(3, 8, 6, .55); backdrop-filter: blur(2px);
+}
+.modal.on { display: flex; }
+.bidbox {
+  width: min(360px, calc(100% - 32px)); text-align: center;
+  padding: 26px 24px 22px; border-radius: 5px;
+  background: linear-gradient(180deg, rgba(24, 42, 33, .98), rgba(9, 17, 13, .99));
+  border: 1px solid rgba(255, 207, 94, .35);
+  box-shadow: 0 40px 90px -40px #000;
+  animation: pop .3s cubic-bezier(.2, .9, .2, 1) both;
+}
+.bidtitle { font-size: 18px; letter-spacing: .1em; color: var(--gold-hot); }
+.bidsub { font-size: 12px; color: var(--bone-dim); margin: 8px 0 18px; }
+.bidbtns { display: flex; gap: 10px; justify-content: center; }
+
+.screen {
+  position: fixed; inset: 0; z-index: 25; display: none;
+  align-items: center; justify-content: center; padding: calc(20px + var(--sat)) 18px calc(20px + var(--sab));
+  background: radial-gradient(120% 90% at 50% 20%, rgba(18, 40, 30, .72), rgba(3, 8, 6, .94) 78%);
+  backdrop-filter: blur(3px);
+}
+.screen.on { display: flex; }
+.card-panel {
+  position: relative; width: min(520px, 100%); padding: 30px 28px 24px; border-radius: 5px;
+  background: linear-gradient(180deg, rgba(22, 40, 31, .98), rgba(8, 15, 12, .99));
+  border: 1px solid rgba(255, 207, 94, .22);
+  box-shadow: 0 50px 120px -40px #000, inset 0 1px 0 rgba(255, 232, 180, .14);
+  animation: pop .34s cubic-bezier(.2, .9, .2, 1) both;
+}
+.card-panel.narrow { width: min(360px, 100%); }
+.card-panel.wide { width: min(600px, 100%); }
+.card-panel::before {
+  content: ''; position: absolute; inset: 0; border-radius: 5px; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .016) 0 1px, transparent 1px 3px);
+}
+.kicker { font-size: 10.5px; letter-spacing: .34em; text-transform: uppercase; color: #d9a53a; }
+h1 {
+  font-family: var(--f-num); font-size: clamp(40px, 10vw, 66px); line-height: .95; letter-spacing: .04em; margin: 8px 0 4px;
+  background: linear-gradient(180deg, #fff6d4 8%, #ffd05c 44%, #c07c14 80%, #8a5406);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .75));
+}
+h2 { font-family: var(--f-num); font-size: clamp(24px, 6vw, 34px); letter-spacing: .03em; }
+.lead { margin-top: 10px; font-size: 13.5px; line-height: 1.8; color: var(--bone-dim); }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+.keys { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 16px; font-size: 11px; color: var(--bone-dim); }
+.keys span { border: 1px solid var(--line); border-radius: 2px; padding: 3px 7px; }
+.keys b { color: var(--bone); }
+.rulelist { display: grid; gap: 9px; margin-top: 14px; font-size: 13px; line-height: 1.65; color: var(--bone-dim); }
+.rulelist b { color: var(--gold); }
+.resgrid { display: grid; grid-template-columns: 1fr auto; gap: 9px 16px; margin-top: 16px; font-size: 13px; }
+.resgrid .k { color: var(--bone-dim); }
+.resgrid .v { font-family: var(--f-num); font-size: 17px; text-align: right; font-variant-numeric: tabular-nums; }
+.resgrid .v.good { color: #7ef0c0; }
+.resgrid .v.bad { color: #ff8a72; }
+
+/* ---------------- 移动端 ---------------- */
+@media (max-width: 760px) {
+  :root { --cw: 48px; --ch: 70px; }
+  .brand .sub { display: none; }
+  .stat { padding: 4px 7px; }
+  .stat b { font-size: 13px; }
+  .stat .k { font-size: 9px; }
+  .avatar { width: 38px; height: 38px; font-size: 14px; }
+  .seat-left { left: 8px; top: 70px; }
+  .seat-right { right: 8px; top: 70px; }
+  .seat-me { bottom: calc(var(--ch) + 86px); left: 8px; }
+  .pz-left { left: 86px; top: 120px; }
+  .pz-right { right: 86px; top: 120px; }
+  .pz-me { bottom: calc(var(--ch) + 66px); }
+  .card.small { --cw: 34px; --ch: 48px; }
+  .btn { padding: 10px 14px; min-width: 66px; font-size: 13px; }
+  .hand .card { margin-left: calc(var(--cw) * -0.50); }
+}
+@media (max-width: 420px) {
+  :root { --cw: 42px; --ch: 62px; }
+  .hand .card { margin-left: calc(var(--cw) * -0.56); }
+}
+@media (max-height: 520px) {
+  .card-panel { padding: 18px 18px 16px; }
+  h1 { font-size: 34px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card, .bubble, .card-panel, .bidbox { animation: none !important; transition: none !important; }
+}
+
+/* 桌面中央的暗纹 */
+.center-mark {
+  position: absolute; left: 50%; top: 43%; transform: translate(-50%, -50%);
+  font-family: var(--f-num); font-size: clamp(52px, 11vw, 132px); letter-spacing: .12em;
+  color: rgba(255, 255, 255, .045); pointer-events: none; white-space: nowrap;
+}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- 顶栏 -->
+  <header class="topbar">
+    <div class="brand"><b>斗地主</b><span class="sub">4399 · 经典纸牌</span></div>
+    <div class="stats">
+      <div class="stat"><span class="k">底分</span><b id="st-base">10</b></div>
+      <div class="stat"><span class="k">倍数</span><b id="st-mult" class="hot">×1</b></div>
+      <div class="stat"><span class="k">比分</span><b id="st-score">0 : 0</b></div>
+    </div>
+    <div class="tools">
+      <button class="icobtn" id="btn-sound" type="button" title="静音 (M)">🔊</button>
+      <button class="icobtn" id="btn-menu" type="button" title="菜单 (Esc)">☰</button>
+    </div>
+  </header>
+
+  <!-- 牌桌 -->
+  <main class="table" id="table">
+    <div class="felt"></div>
+
+    <!-- 底牌 -->
+    <div class="bottomarea" id="bottomarea">
+      <div class="bottomlabel">底牌</div>
+      <div class="bottomcards" id="bottomcards"></div>
+    </div>
+
+    <!-- 两个电脑座位 -->
+    <div class="seat seat-left" id="seat2">
+      <div class="avatar av2">乙</div>
+      <div class="meta"><span class="nm">电脑乙</span><span class="cnt" id="cnt2">17</span></div>
+      <div class="tag" id="tag2">农民</div>
+      <div class="thinking" id="think2"><i></i><i></i><i></i></div>
+    </div>
+    <div class="seat seat-right" id="seat1">
+      <div class="avatar av1">甲</div>
+      <div class="meta"><span class="nm">电脑甲</span><span class="cnt" id="cnt1">17</span></div>
+      <div class="tag" id="tag1">农民</div>
+      <div class="thinking" id="think1"><i></i><i></i><i></i></div>
+    </div>
+
+    <!-- 桌面上的牌 -->
+    <div class="playzone pz-left" id="pz2"></div>
+    <div class="playzone pz-right" id="pz1"></div>
+    <div class="playzone pz-me" id="pz0"></div>
+
+    <div class="center-mark">斗地主</div>
+    <div class="phase" id="phase">准备发牌</div>
+
+    <!-- 我的座位 -->
+    <div class="seat seat-me" id="seat0">
+      <div class="avatar av0">你</div>
+      <div class="meta"><span class="nm">你</span><span class="cnt" id="cnt0">17</span></div>
+      <div class="tag" id="tag0">农民</div>
+    </div>
+
+    <!-- 我的手牌 -->
+    <div class="hand" id="hand"></div>
+
+    <!-- 操作按钮 -->
+    <div class="controls" id="controls">
+      <button class="btn ghost" id="btn-menu2" type="button">菜单</button>
+      <button class="btn" id="btn-hint" type="button">提示</button>
+      <button class="btn" id="btn-pass" type="button">不出</button>
+      <button class="btn primary" id="btn-play" type="button">出牌</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <div class="bombflash" id="bombflash"></div>
+  </main>
+</div>
+
+<!-- 叫地主 -->
+<div class="modal" id="bidbar">
+  <div class="bidbox">
+    <div class="bidtitle">轮到你叫地主</div>
+    <div class="bidsub">手上这 17 张牌，敢不敢接？</div>
+    <div class="bidbtns">
+      <button class="btn primary" id="bid-yes" type="button">叫地主</button>
+      <button class="btn" id="bid-no" type="button">不叫</button>
+    </div>
+  </div>
+</div>
+
+<!-- 开始界面 -->
+<section class="screen on" id="title">
+  <div class="card-panel">
+    <div class="kicker">4399 · 经典纸牌</div>
+    <h1>斗地主</h1>
+    <p class="lead">三个人，一副牌，54 张。<br>叫地主、抢出牌，先出完的赢。</p>
+    <div class="actions">
+      <button class="btn primary big" id="btn-start" type="button">开始游戏</button>
+      <button class="btn big" id="btn-rules" type="button">怎么玩</button>
+    </div>
+    <div class="keys">
+      <span><b>点击</b> 选牌</span><span><b>空格</b> 出牌</span><span><b>P</b> 不出</span><span><b>H</b> 提示</span><span><b>M</b> 静音</span>
+    </div>
+  </div>
+</section>
+
+<!-- 规则 -->
+<section class="screen" id="rules">
+  <div class="card-panel wide">
+    <div class="kicker">HOW TO PLAY</div>
+    <h2>三条最基本的规矩</h2>
+    <div class="rulelist">
+      <div><b>叫地主</b>：三家轮着叫，叫到的人拿走 3 张底牌，变成 1 打 2。</div>
+      <div><b>出牌</b>：单张、对子、三张、三带一/二、顺子（≥5 连）、连对（≥3 连对）、飞机、四带二，以及炸弹和王炸。</div>
+      <div><b>管牌</b>：牌型一样、张数一样，比大小。炸弹管一切，王炸最大。</div>
+      <div><b>胜负</b>：地主先出完 → 地主赢；两个农民里任意一个先出完 → 农民赢。每出一次炸弹/王炸，倍数 ×2。</div>
+    </div>
+    <div class="actions"><button class="btn primary" id="rules-close" type="button">知道了</button></div>
+  </div>
+</section>
+
+<!-- 结算 -->
+<section class="screen" id="result">
+  <div class="card-panel">
+    <div class="kicker" id="res-kicker">ROUND OVER</div>
+    <h2 id="res-title">这局赢了</h2>
+    <div class="resgrid">
+      <span class="k">结果</span><span class="v" id="res-who">—</span>
+      <span class="k">倍数</span><span class="v" id="res-mult">×1</span>
+      <span class="k">本局得分</span><span class="v" id="res-pts">+0</span>
+      <span class="k">累计比分</span><span class="v" id="res-score">0 : 0</span>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="btn-again" type="button">再来一局</button>
+      <button class="btn" id="btn-home" type="button">返回标题</button>
+    </div>
+  </div>
+</section>
+
+<!-- 暂停 / 菜单 -->
+<section class="screen" id="pause">
+  <div class="card-panel narrow">
+    <div class="kicker">PAUSED</div>
+    <h2>歇一会儿</h2>
+    <div class="actions">
+      <button class="btn primary" id="btn-resume" type="button">继续</button>
+      <button class="btn" id="btn-quit" type="button">结束本局</button>
+    </div>
+  </div>
+</section>
+
+<script>(function(){
+'use strict';
+window.GM = window.GM || {};
+/* ===== cards.js ===== */
+/* cards.js — deck, combo recognition, comparison, and candidate generation. */
+window.GM = window.GM || {};
+(function (GM) {
+  'use strict';
+  const C = GM.cards = {};
+
+  /* values: 3..15 = 3..2, 16 = 小王, 17 = 大王 */
+  C.RANK = { 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: '10', 11: 'J', 12: 'Q', 13: 'K', 14: 'A', 15: '2' };
+  C.SUIT = { S: '♠', H: '♥', C: '♣', D: '♦' };
+  C.VALUE_NAME = v => (v === 16 ? '小王' : v === 17 ? '大王' : C.RANK[v]);
+
+  C.makeDeck = function () {
+    const d = [];
+    let id = 0;
+    ['S', 'H', 'C', 'D'].forEach(s => {
+      for (let v = 3; v <= 15; v++) d.push({ id: id++, v, suit: s, red: s === 'H' || s === 'D' });
+    });
+    d.push({ id: id++, v: 16, suit: null, red: false });
+    d.push({ id: id++, v: 17, suit: null, red: true });
+    return d;
+  };
+  C.shuffle = function (deck, rnd) {
+    const r = rnd || Math.random;
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(r() * (i + 1));
+      const t = deck[i]; deck[i] = deck[j]; deck[j] = t;
+    }
+    return deck;
+  };
+  C.sortDesc = hand => hand.slice().sort((a, b) => b.v - a.v || (a.suit || '').localeCompare(b.suit || ''));
+
+  const consecutive = keys => {
+    for (let i = 1; i < keys.length; i++) if (keys[i] !== keys[i - 1] + 1) return false;
+    return true;
+  };
+
+  /* ---------- combo recognition ---------- */
+  C.getCombo = function (cards) {
+    const n = cards.length;
+    if (!n) return null;
+    const cnt = {};
+    cards.forEach(c => { cnt[c.v] = (cnt[c.v] || 0) + 1; });
+    const keys = Object.keys(cnt).map(Number).sort((a, b) => a - b);
+    const maxV = keys[keys.length - 1];
+    const minV = keys[0];
+
+    if (n === 2 && cnt[16] === 1 && cnt[17] === 1) return mk('rocket', 100, 1, cards);
+    if (n === 4 && keys.length === 1) return mk('bomb', minV, 1, cards);
+    if (n === 1) return mk('single', minV, 1, cards);
+    if (n === 2 && keys.length === 1) return mk('pair', minV, 1, cards);
+    if (n === 3 && keys.length === 1) return mk('triple', minV, 1, cards);
+    if (n === 4 && keys.length === 2) {
+      const t = keys.find(k => cnt[k] === 3);
+      if (t !== undefined) return mk('triple1', t, 1, cards);
+    }
+    if (n === 5 && keys.length === 2) {
+      const t = keys.find(k => cnt[k] === 3);
+      const p = keys.find(k => cnt[k] === 2);
+      if (t !== undefined && p !== undefined) return mk('triple2', t, 1, cards);
+    }
+    if (n >= 5 && n === keys.length && maxV <= 14 && consecutive(keys)) return mk('straight', maxV, n, cards);
+    if (n >= 6 && n % 2 === 0 && keys.length === n / 2 && keys.every(k => cnt[k] === 2) && maxV <= 14 && consecutive(keys)) {
+      return mk('spair', maxV, n / 2, cards);
+    }
+    if (n >= 6 && n % 3 === 0 && keys.length === n / 3 && keys.every(k => cnt[k] === 3) && maxV <= 14 && consecutive(keys)) {
+      return mk('plane', maxV, n / 3, cards);
+    }
+    if (n === 6) {
+      const q = keys.find(k => cnt[k] === 4);
+      if (q !== undefined) return mk('four2', q, 1, cards);
+    }
+    if (n === 8) {
+      const q = keys.find(k => cnt[k] === 4);
+      if (q !== undefined) {
+        const rest = keys.filter(k => k !== q);
+        if (rest.length === 2 && rest.every(k => cnt[k] === 2)) return mk('four2p', q, 1, cards);
+      }
+    }
+    const pw = planeWings(cnt, keys, n);
+    if (pw) return mk(pw.type, pw.value, pw.len, cards);
+    return null;
+  };
+  function mk(type, value, len, cards) { return { type, value, len, cards }; }
+
+  function planeWings(cnt, keys, n) {
+    const tri = keys.filter(k => cnt[k] >= 3 && k <= 14);
+    if (tri.length < 2) return null;
+    const runs = [];
+    let cur = [];
+    for (const k of tri) {
+      if (!cur.length || k === cur[cur.length - 1] + 1) cur.push(k);
+      else { if (cur.length >= 2) runs.push(cur); cur = [k]; }
+    }
+    if (cur.length >= 2) runs.push(cur);
+    for (const run of runs) {
+      for (let k = run.length; k >= 2; k--) {
+        for (let s = 0; s + k <= run.length; s++) {
+          const body = run.slice(s, s + k);
+          const rest = Object.assign({}, cnt);
+          body.forEach(b => { rest[b] -= 3; });
+          let total = 0;
+          for (const kk in rest) total += rest[kk];
+          const top = body[body.length - 1];
+          if (total === k) return { type: 'plane1', value: top, len: k };
+          if (total === 2 * k) {
+            let ok = true;
+            for (const kk in rest) if (rest[kk] % 2 !== 0) ok = false;
+            if (ok) return { type: 'plane2', value: top, len: k };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  C.TYPE_NAME = {
+    single: '单张', pair: '对子', triple: '三张', triple1: '三带一', triple2: '三带二',
+    straight: '顺子', spair: '连对', plane: '飞机', plane1: '飞机带单', plane2: '飞机带对',
+    four2: '四带二', four2p: '四带两对', bomb: '炸弹', rocket: '王炸'
+  };
+
+  C.canBeat = function (a, b) {
+    if (!a) return false;
+    if (!b) return true;
+    if (a.type === 'rocket') return b.type !== 'rocket';
+    if (b.type === 'rocket') return false;
+    if (a.type === 'bomb' && b.type !== 'bomb') return true;
+    if (b.type === 'bomb' && a.type !== 'bomb') return false;
+    return a.type === b.type && a.len === b.len && a.value > b.value;
+  };
+
+  /* ---------- candidate combos (for the AI and the hint button) ---------- */
+  C.allCombos = function (hand) {
+    const out = [];
+    const byV = {};
+    hand.forEach(c => { (byV[c.v] = byV[c.v] || []).push(c); });
+    const vs = Object.keys(byV).map(Number).sort((a, b) => a - b);
+    const push = cards => {
+      const cb = C.getCombo(cards);
+      if (cb) { cb.cards = cards; out.push(cb); }
+    };
+    vs.forEach(v => {
+      push([byV[v][0]]);
+      if (byV[v].length >= 2) push(byV[v].slice(0, 2));
+      if (byV[v].length >= 3) push(byV[v].slice(0, 3));
+      if (byV[v].length >= 4) push(byV[v].slice(0, 4));
+    });
+    if (byV[16] && byV[17]) push([byV[16][0], byV[17][0]]);
+    /* triples with a kicker */
+    vs.forEach(v => {
+      if (byV[v].length < 3) return;
+      for (const o of vs) {
+        if (o === v || !byV[o].length) continue;
+        push([...byV[v].slice(0, 3), byV[o][0]]);
+        break;
+      }
+      for (const o of vs) {
+        if (o === v || byV[o].length < 2) continue;
+        push([...byV[v].slice(0, 3), byV[o][0], byV[o][1]]);
+        break;
+      }
+    });
+    /* four with two singles */
+    vs.forEach(v => {
+      if (byV[v].length < 4) return;
+      const pool = [];
+      for (const o of vs) {
+        if (o === v) continue;
+        for (const c of byV[o]) { if (pool.length < 2) pool.push(c); }
+        if (pool.length >= 2) break;
+      }
+      if (pool.length >= 2) push([...byV[v], pool[0], pool[1]]);
+    });
+    /* straights */
+    for (let s = 3; s <= 10; s++) {
+      const cards = [];
+      for (let v = s; v <= 14; v++) {
+        if (!byV[v]) break;
+        cards.push(byV[v][0]);
+        if (cards.length >= 5) push(cards.slice());
+      }
+    }
+    /* consecutive pairs */
+    for (let s = 3; s <= 12; s++) {
+      const cards = [];
+      for (let v = s; v <= 14; v++) {
+        if (!byV[v] || byV[v].length < 2) break;
+        cards.push(byV[v][0], byV[v][1]);
+        if (cards.length >= 6) push(cards.slice());
+      }
+    }
+    /* planes, no wings */
+    for (let s = 3; s <= 13; s++) {
+      const cards = [];
+      for (let v = s; v <= 14; v++) {
+        if (!byV[v] || byV[v].length < 3) break;
+        cards.push(...byV[v].slice(0, 3));
+        if (cards.length >= 6) push(cards.slice());
+      }
+    }
+    /* de-duplicate on type+value+len+card ids */
+    const seen = {};
+    return out.filter(c => {
+      const k = c.type + '|' + c.value + '|' + c.len + '|' + c.cards.map(x => x.id).sort((a, b) => a - b).join(',');
+      if (seen[k]) return false;
+      seen[k] = 1;
+      return true;
+    });
+  };
+
+  C.remove = function (hand, cards) {
+    const ids = new Set(cards.map(c => c.id));
+    return hand.filter(c => !ids.has(c.id));
+  };
+})(window.GM);
+
+/* ===== ai.js ===== */
+/* ai.js — rule-based opponents. Good enough to feel like a real table, not a solver. */
+(function (GM) {
+  'use strict';
+  const C = GM.cards;
+  const AI = GM.ai = {};
+
+  /* how strong is this 17-card hand? drives the bidding */
+  AI.handStrength = function (hand) {
+    let s = 0;
+    const cnt = {};
+    hand.forEach(c => { cnt[c.v] = (cnt[c.v] || 0) + 1; });
+    for (const v in cnt) {
+      const n = cnt[v], val = +v;
+      if (val === 17) s += 7;
+      else if (val === 16) s += 5;
+      else if (val === 15) s += n >= 2 ? 6 : 3;     /* 2s */
+      else if (val === 14) s += n >= 2 ? 4 : 2;     /* A */
+      else if (val === 13) s += 1.2;
+      if (n === 4) s += 8;                           /* bomb */
+    }
+    const combos = C.allCombos(hand);
+    s += combos.filter(c => c.type === 'straight' || c.type === 'spair' || c.type === 'plane').length * 0.8;
+    return s;
+  };
+
+  /* ---------- playing ---------- */
+  AI.choose = function (game, me) {
+    const hand = me.hand;
+    const last = game.lastPlay;              /* { owner, combo } or null */
+    const combos = C.allCombos(hand);
+
+    /* an instant win always gets played */
+    const finish = combos.filter(c => c.cards.length === hand.length);
+    if (finish.length) {
+      if (!last || last.owner === me.idx) return finish[0];
+      const ok = finish.filter(c => C.canBeat(c, last.combo));
+      if (ok.length) return ok[0];
+    }
+
+    const leading = !last || last.owner === me.idx;
+
+    if (leading) {
+      /* don't open with a bomb or the jokers unless the hand is tiny */
+      const soft = combos.filter(c => c.type !== 'bomb' && c.type !== 'rocket');
+      const pool = soft.length ? soft : combos.slice();
+      if (!pool.length) return null;
+      /* smallest value first, with a nudge toward shedding several cards at once */
+      /* favour shedding several cards at once, but never open with a bomb */
+      const score = c => c.value - c.cards.length * 2.6 + (c.type === 'bomb' || c.type === 'rocket' ? 80 : 0);
+      pool.sort((a, b) => score(a) - score(b));
+      return pool[0];
+    }
+
+    /* following */
+    const lastRole = game.players[last.owner].role;
+    const partnerPlayed = me.role === 'farmer' && lastRole === 'farmer';
+    const beats = combos.filter(c => C.canBeat(c, last.combo));
+    if (!beats.length) return null;
+
+    if (partnerPlayed) {
+      /* a farmer does not fight their own teammate — unless the landlord is nearly out */
+      const landlord = game.players.find(p => p.role === 'landlord');
+      const emergency = landlord && landlord.hand.length <= 2 && last.combo.value >= 13;
+      if (!emergency) return null;
+    }
+
+    const plain = beats.filter(c => c.type !== 'bomb' && c.type !== 'rocket');
+    const pool = plain.length ? plain : beats;
+    pool.sort((a, b) => a.value - b.value || a.cards.length - b.cards.length);
+    const best = pool[0];
+
+    /* hold bombs back unless they are the only answer or the landlord is close to finishing */
+    if (best.type === 'bomb' || best.type === 'rocket') {
+      const landlord = game.players.find(p => p.role === 'landlord');
+      if (landlord && landlord.hand.length > 3 && me.role === 'farmer') return null;
+    }
+    return best;
+  };
+
+  /* the two computer seats bid on their own */
+  AI.wantBid = function (hand) {
+    return AI.handStrength(hand) >= 9;
+  };
+})(window.GM);
+
+/* ===== audio.js ===== */
+/* audio.js — 所有音效都由 WebAudio 现场合成，没有一个音频文件。 */
+(function (GM) {
+  'use strict';
+  const A = GM.Audio = function () { this.ctx = null; this.master = null; this.noise = null; this.muted = false; };
+  A.prototype.init = function () {
+    if (this.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    this.ctx = new AC();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = 0.4;
+    this.master.connect(this.ctx.destination);
+    const len = Math.floor(this.ctx.sampleRate * 1.0);
+    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    this.noise = buf;
+  };
+  A.prototype.ready = function () {
+    if (!this.ctx) this.init();
+    if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    return this.ctx && !this.muted;
+  };
+  A.prototype.now = function () { return this.ctx ? this.ctx.currentTime : 0; };
+  A.prototype.setMuted = function (m) {
+    this.muted = !!m;
+    if (this.master) this.master.gain.setTargetAtTime(this.muted ? 0 : 0.4, this.now(), 0.02);
+  };
+  A.prototype.tone = function (o) {
+    if (!this.ready()) return;
+    const t0 = this.now() + (o.delay || 0);
+    const osc = this.ctx.createOscillator(), g = this.ctx.createGain();
+    osc.type = o.type || 'sine';
+    osc.frequency.setValueAtTime(o.freq, t0);
+    if (o.to) osc.frequency.exponentialRampToValueAtTime(Math.max(20, o.to), t0 + o.dur);
+    const peak = o.gain == null ? 0.18 : o.gain;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak, t0 + (o.attack || 0.006));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + o.dur);
+    osc.connect(g); g.connect(this.master);
+    osc.start(t0); osc.stop(t0 + o.dur + 0.03);
+  };
+  A.prototype.hiss = function (o) {
+    if (!this.ready()) return;
+    const t0 = this.now() + (o.delay || 0);
+    const src = this.ctx.createBufferSource(); src.buffer = this.noise; src.loop = true;
+    const f = this.ctx.createBiquadFilter();
+    f.type = o.filter || 'bandpass';
+    f.frequency.setValueAtTime(o.freq || 1400, t0);
+    if (o.sweepTo) f.frequency.exponentialRampToValueAtTime(o.sweepTo, t0 + o.dur);
+    f.Q.value = o.q == null ? 1.1 : o.q;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(o.gain == null ? 0.12 : o.gain, t0 + (o.attack || 0.012));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + o.dur);
+    src.connect(f); f.connect(g); g.connect(this.master);
+    src.start(t0); src.stop(t0 + o.dur + 0.05);
+  };
+
+  A.prototype.deal = function () { this.hiss({ dur: 0.1, gain: 0.07, freq: 2600, q: 0.9 }); };
+  A.prototype.select = function () { this.tone({ type: 'triangle', freq: 880, dur: 0.06, gain: 0.05 }); };
+  A.prototype.play = function () { this.hiss({ dur: 0.16, gain: 0.13, freq: 900, sweepTo: 2600, q: 0.7 }); };
+  A.prototype.pass = function () { this.tone({ type: 'square', freq: 300, to: 220, dur: 0.1, gain: 0.05 }); };
+  A.prototype.bomb = function () {
+    this.hiss({ dur: 0.5, gain: 0.34, freq: 800, sweepTo: 80, filter: 'lowpass', q: 0.7 });
+    this.tone({ type: 'sine', freq: 90, to: 28, dur: 0.45, gain: 0.32 });
+  };
+  A.prototype.win = function () {
+    [523, 659, 784, 1046].forEach((f, i) => this.tone({ type: 'triangle', freq: f, dur: 0.26, gain: 0.14, delay: i * 0.1 }));
+  };
+  A.prototype.lose = function () {
+    [392, 330, 262].forEach((f, i) => this.tone({ type: 'sawtooth', freq: f, dur: 0.3, gain: 0.09, delay: i * 0.13 }));
+  };
+  A.prototype.buzz = function () { this.tone({ type: 'square', freq: 180, to: 130, dur: 0.12, gain: 0.08 }); };
+})(window.GM);
+
+/* ===== game.js ===== */
+/* game.js — 一副牌的流程：发牌 → 叫地主 → 出牌 → 结算。不碰 DOM。 */
+(function (GM) {
+  'use strict';
+  const C = GM.cards;
+  const AI = GM.ai;
+
+  const Game = GM.Game = function (opts) {
+    this.o = opts;                    /* { audio, ui } */
+    this.players = [];
+    this.scores = { you: 0, cpu: 0 }; /* 只记你和“全场”的胜负，够用 */
+    this.state = 'idle';
+    this.round = 0;
+  };
+
+  Game.prototype.newRound = function () {
+    this.round++;
+    const deck = C.shuffle(C.makeDeck(), this.o.rng || Math.random);
+    const hands = [deck.slice(0, 17), deck.slice(17, 34), deck.slice(34, 51)];
+    this.bottom = deck.slice(51);                 /* 3 张底牌 */
+    this.players = [
+      { idx: 0, name: '你', hand: C.sortDesc(hands[0]), role: 'farmer', human: true },
+      { idx: 1, name: '电脑甲', hand: C.sortDesc(hands[1]), role: 'farmer', human: false },
+      { idx: 2, name: '电脑乙', hand: C.sortDesc(hands[2]), role: 'farmer', human: false }
+    ];
+    this.landlord = -1;
+    this.turn = 0;
+    this.lastPlay = null;       /* { owner, combo } */
+    this.lastAction = [null, null, null];   /* 'pass' | {combo} | null per seat, for the table */
+    this.multiplier = 1;
+    this.bombCount = 0;
+    this.farmerPlayed = false;
+    this.state = 'bid';
+    this.bidder = 0;
+    this.bidsMade = 0;
+    this.o.ui.renderAll();
+    this.o.ui.setPhase('发牌…');
+  };
+
+  /* ---------- 叫地主 ---------- */
+  Game.prototype.askBid = function () {
+    const p = this.players[this.bidder];
+    this.state = 'bid';
+    this.o.ui.updateTurn(this.bidder);
+    if (p.human) {
+      this.o.ui.showBidPrompt();
+    } else {
+      const wants = AI.wantBid(p.hand);
+      this.o.ui.setThinking(this.bidder, true);
+      const me = this;
+      setTimeout(function () {
+        me.o.ui.setThinking(me.bidder, false);
+        if (wants) me.bidYes(true); else me.bidNo(true);
+      }, 620 + Math.random() * 420);
+    }
+  };
+  Game.prototype.bidYes = function () {
+    const p = this.players[this.bidder];
+    this.o.ui.hideBidPrompt();
+    this.o.ui.showBubble(this.bidder, '叫地主！');
+    this.landlord = this.bidder;
+    p.role = 'landlord';
+    this.players.forEach(q => { if (q.idx !== this.landlord) q.role = 'farmer'; });
+    this.state = 'landlord-set';
+    this.o.ui.renderAll();
+    const me = this;
+    setTimeout(function () { me.giveBottom(); }, 620);
+  };
+  Game.prototype.bidNo = function () {
+    this.o.ui.hideBidPrompt();
+    this.o.ui.showBubble(this.bidder, '不叫');
+    this.bidsMade++;
+    if (this.bidsMade >= 3) {
+      /* nobody called: shuffle again, quietly */
+      this.o.ui.setPhase('没人叫地主，重新发牌…');
+      const me = this;
+      setTimeout(function () { me.newRound(); }, 900);
+      return;
+    }
+    this.bidder = (this.bidder + 1) % 3;
+    const me = this;
+    setTimeout(function () { me.askBid(); }, 520);
+  };
+  Game.prototype.giveBottom = function () {
+    const p = this.players[this.landlord];
+    p.hand = C.sortDesc(p.hand.concat(this.bottom));
+    this.state = 'play';
+    this.turn = this.landlord;
+    this.o.ui.renderAll();
+    this.o.ui.revealBottom();
+    this.o.ui.setPhase('开始出牌');
+    const me = this;
+    setTimeout(function () { me.beginTurn(); }, 520);
+  };
+
+  /* ---------- 出牌 ---------- */
+  Game.prototype.beginTurn = function () {
+    if (this.state === 'over') return;
+    this.state = 'play';
+    const p = this.players[this.turn];
+    this.o.ui.updateTurn(this.turn);
+    if (p.human) {
+      const canPass = !!this.lastPlay && this.lastPlay.owner !== this.turn;
+      this.o.ui.enableControls(true, canPass);
+    } else {
+      this.o.ui.enableControls(false);
+      this.o.ui.setThinking(this.turn, true);
+      const me = this;
+      const wait = 700 + Math.random() * 700 + (AI.handStrength(p.hand) < 6 ? 250 : 0);
+      setTimeout(function () {
+        me.o.ui.setThinking(me.turn, false);
+        const combo = AI.choose(me, p);
+        me.applyMove(me.turn, combo);
+      }, wait);
+    }
+  };
+
+  /* combo === null 表示不出 */
+  Game.prototype.applyMove = function (idx, combo) {
+    const p = this.players[idx];
+    if (!combo) {
+      this.lastAction[idx] = 'pass';
+      this.o.audio.pass();
+      this.o.ui.renderPlays();   /* 桌面上已经有“不出”的小牌子，不再叠气泡 */
+      /* 两家都过，出牌权回到最后出牌的人 */
+      const next = (idx + 1) % 3;
+      if (this.lastPlay && next === this.lastPlay.owner) {
+        this.lastPlay = null;
+        this.lastAction = [null, null, null];
+        this.o.ui.renderPlays();
+        this.o.ui.setPhase('新一轮');
+      }
+      this.turn = next;
+      const me = this;
+      setTimeout(function () { me.beginTurn(); }, 340);
+      return;
+    }
+
+    if (p.role === 'farmer') this.farmerPlayed = true;
+    p.hand = C.remove(p.hand, combo.cards);
+    this.lastPlay = { owner: idx, combo };
+    this.lastAction = [null, null, null];
+    this.lastAction[idx] = { combo };
+    if (combo.type === 'bomb' || combo.type === 'rocket') {
+      this.bombCount++;
+      this.multiplier *= 2;
+      this.o.audio.bomb();
+      this.o.ui.flashBomb(combo.type === 'rocket' ? '王炸！×2' : '炸弹！×2');
+    } else {
+      this.o.audio.play();
+    }
+    this.o.ui.renderAll();
+    this.o.ui.renderPlays();
+
+    if (p.hand.length === 0) { this.finish(idx); return; }
+    this.turn = (idx + 1) % 3;
+    const me = this;
+    setTimeout(function () { me.beginTurn(); }, 380);
+  };
+
+  /* 玩家点了“出牌” */
+  Game.prototype.humanPlay = function (cards) {
+    if (this.state !== 'play' || this.turn !== 0) return { ok: false, msg: '还没轮到你' };
+    const combo = C.getCombo(cards);
+    if (!combo) return { ok: false, msg: '这不是合法牌型' };
+    if (this.lastPlay && this.lastPlay.owner !== 0 && !C.canBeat(combo, this.lastPlay.combo)) {
+      return { ok: false, msg: '管不上上家的牌' };
+    }
+    this.o.ui.clearSelection();
+    this.applyMove(0, combo);
+    return { ok: true };
+  };
+  Game.prototype.humanPass = function () {
+    if (this.state !== 'play' || this.turn !== 0) return { ok: false, msg: '还没轮到你' };
+    if (!this.lastPlay || this.lastPlay.owner === 0) return { ok: false, msg: '你是先手，必须出牌' };
+    this.applyMove(0, null);
+    return { ok: true };
+  };
+
+  /* 提示：在当前牌面上找一手能管住的牌，循环切换 */
+  Game.prototype.hint = function () {
+    const me = this.players[0];
+    const combos = C.allCombos(me.hand);
+    let pool;
+    if (!this.lastPlay || this.lastPlay.owner === 0) {
+      pool = combos.filter(c => c.type !== 'bomb' && c.type !== 'rocket');
+      if (!pool.length) pool = combos;
+      pool.sort((a, b) => a.value - b.value);
+    } else {
+      pool = combos.filter(c => C.canBeat(c, this.lastPlay.combo));
+      pool.sort((a, b) => a.value - b.value || a.cards.length - b.cards.length);
+    }
+    if (!pool.length) {
+      this.o.ui.toast('没有能管上的牌，只能不出');
+      return;
+    }
+    this.hintIdx = ((this.hintIdx || 0) + 1) % pool.length;
+    this.o.ui.selectCards(pool[this.hintIdx].cards);
+  };
+
+  /* ---------- 结算 ---------- */
+  Game.prototype.finish = function (winner) {
+    this.state = 'over';
+    this.o.ui.enableControls(false);
+    this.o.ui.updateTurn(-1);
+    const iAmLandlord = this.players[0].role === 'landlord';
+    const landlordWon = this.players[winner].role === 'landlord';
+    const iWon = (iAmLandlord && landlordWon) || (!iAmLandlord && !landlordWon);
+    /* 春天：地主一手没让别人出过牌 —— 用出牌次数粗判 */
+    const spring = landlordWon && !this.farmerPlayed;
+    if (spring) this.multiplier *= 2;
+
+    const base = 10;
+    const pts = base * this.multiplier;
+    if (iWon) { this.scores.you += pts; this.scores.cpu -= pts; this.o.audio.win(); }
+    else { this.scores.you -= pts; this.scores.cpu += pts; this.o.audio.lose(); }
+
+    const me = this;
+    setTimeout(function () {
+      me.o.ui.showResult({
+        iWon, landlordWon, iAmLandlord,
+        winnerName: me.players[winner].name,
+        multiplier: me.multiplier, points: pts, spring,
+        score: me.scores.you
+      });
+    }, 700);
+  };
+
+})(window.GM);
+
+/* ===== ui.js ===== */
+/* ui.js — 所有 DOM 渲染与交互反馈。 */
+(function (GM) {
+  'use strict';
+  const C = GM.cards;
+  const $ = id => document.getElementById(id);
+  const ui = GM.ui = {};
+  ui.sel = new Set();
+
+  function cardEl(card, size) {
+    const el = document.createElement('div');
+    el.className = 'card ' + (card.red ? 'red' : 'black') + (size ? ' ' + size : '');
+    el.dataset.id = card.id;
+    if (card.v >= 16) {
+      el.classList.add('joker');
+      el.innerHTML = '<div class="jok">' + (card.v === 17 ? '大' : '小') + '<br>王</div>';
+    } else {
+      const r = C.RANK[card.v], s = C.SUIT[card.suit];
+      el.innerHTML = '<div class="c tl"><b>' + r + '</b><i>' + s + '</i></div>' +
+        '<div class="pip">' + s + '</div>' +
+        '<div class="c br"><b>' + r + '</b><i>' + s + '</i></div>';
+    }
+    return el;
+  }
+  ui.cardEl = cardEl;
+
+  function backEl(size) {
+    const el = document.createElement('div');
+    el.className = 'card back' + (size ? ' ' + size : '');
+    return el;
+  }
+
+  ui.init = function (game, audio) {
+    ui.game = game; ui.audio = audio;
+    ui.hand = $('hand');
+    ui.hand.addEventListener('click', e => {
+      const el = e.target.closest('.card');
+      if (!el) return;
+      const id = +el.dataset.id;
+      if (ui.sel.has(id)) { ui.sel.delete(id); el.classList.remove('sel'); }
+      else { ui.sel.add(id); el.classList.add('sel'); }
+      audio.ready(); audio.select();
+    });
+  };
+
+  ui.renderAll = function () {
+    const g = ui.game;
+    if (!g || !g.players.length) return;
+    /* 手牌 */
+    const me = g.players[0];
+    ui.hand.innerHTML = '';
+    me.hand.forEach(c => {
+      const el = cardEl(c);
+      if (ui.sel.has(c.id)) el.classList.add('sel');
+      ui.hand.appendChild(el);
+    });
+    layoutHand();
+    /* 剩余张数 */
+    for (let i = 0; i < 3; i++) $('cnt' + i).textContent = g.players[i].hand.length;
+    /* 身份 */
+    for (let i = 0; i < 3; i++) {
+      const tag = $('tag' + i);
+      tag.textContent = g.players[i].role === 'landlord' ? '地主' : '农民';
+      tag.classList.toggle('landlord', g.players[i].role === 'landlord');
+    }
+    /* 底牌 */
+    const bc = $('bottomcards');
+    bc.innerHTML = '';
+    g.bottom.forEach(c => {
+      if (g.landlord >= 0) bc.appendChild(cardEl(c, 'small'));
+      else bc.appendChild(backEl('small'));
+    });
+    /* 分数 */
+    $('st-mult').textContent = '×' + g.multiplier;
+    $('st-score').textContent = g.scores.you + ' : ' + g.scores.cpu;
+    $('st-base').textContent = 10;
+  };
+
+  /* 手牌自适应排布：牌再多也塞得进一行，窄屏自动加大重叠 */
+  function layoutHand() {
+    const nodes = [...ui.hand.children];
+    const n = nodes.length;
+    if (n < 2) return;
+    const avail = ui.hand.clientWidth - 16;
+    const cw = nodes[0].offsetWidth || 48;
+    if (avail <= 0) return;
+    const gap = Math.min(cw * 0.66, (avail - cw) / (n - 1));
+    nodes.forEach((el, i) => {
+      el.style.marginLeft = i === 0 ? '0px' : (gap - cw) + 'px';
+    });
+  }
+  ui.relayoutHand = layoutHand;
+
+  ui.renderPlays = function () {
+    const g = ui.game;
+    const map = { 0: 'pz0', 1: 'pz1', 2: 'pz2' };
+    for (let i = 0; i < 3; i++) {
+      const box = $(map[i]);
+      box.innerHTML = '';
+      const a = g.lastAction[i];
+      if (!a) continue;
+      if (a === 'pass') {
+        const chip = document.createElement('div');
+        chip.className = 'bubble';
+        chip.style.position = 'static';
+        chip.style.animation = 'none';
+        chip.textContent = '不出';
+        chip.style.color = 'rgba(244,239,227,.55)';
+        chip.style.borderColor = 'rgba(244,239,227,.18)';
+        box.appendChild(chip);
+      } else if (a.combo) {
+        a.combo.cards.forEach(c => box.appendChild(cardEl(c, 'small')));
+      }
+    }
+  };
+
+  ui.updateTurn = function (idx) {
+    for (let i = 0; i < 3; i++) $('seat' + i).classList.toggle('on', i === idx);
+  };
+  ui.setThinking = function (idx, on) {
+    const el = $('think' + idx);
+    if (el) el.classList.toggle('on', !!on);
+  };
+  ui.setPhase = function (t) { $('phase').textContent = t; };
+
+  ui.showBubble = function (idx, text) {
+    const seat = $('seat' + idx);
+    if (!seat) return;
+    const b = document.createElement('div');
+    b.className = 'bubble';
+    b.textContent = text;
+    const r = seat.getBoundingClientRect(), tr = $('table').getBoundingClientRect();
+    let x = r.left - tr.left + r.width / 2, y = r.top - tr.top;
+    if (idx === 2) { x = r.right - tr.left; y = r.bottom - tr.top + 6; }
+    if (idx === 1) { x = r.left - tr.left; y = r.bottom - tr.top + 6; }
+    if (idx === 0) { x = r.right - tr.left + 8; y = r.top - tr.top; }
+    b.style.left = x + 'px';
+    b.style.top = y + 'px';
+    b.style.transform = idx === 1 ? 'translateX(-100%)' : 'none';
+    $('table').appendChild(b);
+    setTimeout(() => b.remove(), 1100);
+  };
+
+  ui.toast = function (t) {
+    const el = $('toast');
+    el.textContent = t;
+    el.classList.add('on');
+    clearTimeout(ui._tt);
+    ui._tt = setTimeout(() => el.classList.remove('on'), 1500);
+  };
+
+  ui.enableControls = function (on, canPass) {
+    $('btn-play').disabled = !on;
+    $('btn-hint').disabled = !on;
+    $('btn-pass').disabled = !on || !canPass;
+  };
+
+  ui.showBidPrompt = function () { $('bidbar').classList.add('on'); };
+  ui.hideBidPrompt = function () { $('bidbar').classList.remove('on'); };
+  ui.revealBottom = function () { ui.renderAll(); };
+
+  ui.flashBomb = function (text) {
+    const el = $('bombflash');
+    el.textContent = text;
+    el.classList.remove('on');
+    void el.offsetWidth;
+    el.classList.add('on');
+  };
+
+  /* 选中 / 清空 / 读取 */
+  ui.selectCards = function (cards) {
+    ui.sel.clear();
+    cards.forEach(c => ui.sel.add(c.id));
+    [...ui.hand.children].forEach(el => {
+      el.classList.toggle('sel', ui.sel.has(+el.dataset.id));
+    });
+    ui.audio.select();
+  };
+  ui.clearSelection = function () {
+    ui.sel.clear();
+    [...ui.hand.children].forEach(el => el.classList.remove('sel'));
+  };
+  ui.getSelected = function () {
+    const g = ui.game;
+    return g.players[0].hand.filter(c => ui.sel.has(c.id));
+  };
+
+  ui.showResult = function (d) {
+    $('res-kicker').textContent = d.iWon ? 'YOU WIN' : 'YOU LOSE';
+    $('res-title').textContent = d.iWon ? '这局赢了' : '这局输了';
+    $('res-who').textContent = (d.landlordWon ? '地主赢' : '农民赢') + '（' + d.winnerName + '先出完）';
+    $('res-mult').textContent = '×' + d.multiplier + (d.spring ? '（春天）' : '');
+    const pts = d.iWon ? d.points : -d.points;
+    const pe = $('res-pts');
+    pe.textContent = (pts > 0 ? '+' : '') + pts;
+    pe.className = 'v ' + (pts > 0 ? 'good' : 'bad');
+    $('res-score').textContent = ui.game.scores.you + ' : ' + ui.game.scores.cpu;
+    $('result').classList.add('on');
+  };
+})(window.GM);
+
+/* ===== main.js ===== */
+/* main.js — 启动、界面切换、输入。 */
+(function (GM) {
+  'use strict';
+  const $ = id => document.getElementById(id);
+
+  const App = GM.App = { screens: ['title', 'rules', 'result', 'pause'] };
+
+  function show(id) {
+    App.screens.forEach(s => $(s).classList.toggle('on', s === id));
+  }
+
+  App.boot = function () {
+    const audio = new GM.Audio();
+    const game = new GM.Game({ audio, ui: GM.ui, rng: Math.random });
+    GM.game = game;
+    GM.ui.init(game, audio);
+    App.audio = audio;
+    App.game = game;
+
+    /* ---- 按钮 ---- */
+    $('btn-start').addEventListener('click', () => { audio.ready(); show(null); App.start(); });
+    $('btn-rules').addEventListener('click', () => show('rules'));
+    $('rules-close').addEventListener('click', () => show('title'));
+    $('btn-again').addEventListener('click', () => { show(null); App.start(); });
+    $('btn-home').addEventListener('click', () => show('title'));
+    $('btn-resume').addEventListener('click', () => show(null));
+    $('btn-quit').addEventListener('click', () => show('title'));
+
+    $('bid-yes').addEventListener('click', () => { audio.ready(); game.bidYes(); });
+    $('bid-no').addEventListener('click', () => { audio.ready(); game.bidNo(); });
+
+    $('btn-play').addEventListener('click', App.doPlay);
+    $('btn-pass').addEventListener('click', App.doPass);
+    $('btn-hint').addEventListener('click', () => { audio.ready(); game.hint(); });
+
+    $('btn-sound').addEventListener('click', () => {
+      audio.ready();
+      audio.setMuted(!audio.muted);
+      $('btn-sound').classList.toggle('muted', audio.muted);
+    });
+    const openMenu = () => show('pause');
+    $('btn-menu').addEventListener('click', openMenu);
+    $('btn-menu2').addEventListener('click', openMenu);
+
+    addEventListener('resize', () => { if (GM.ui.relayoutHand) GM.ui.relayoutHand(); });
+    addEventListener('orientationchange', () => setTimeout(() => GM.ui.relayoutHand && GM.ui.relayoutHand(), 200));
+
+    /* ---- 键盘 ---- */
+    document.addEventListener('keydown', e => {
+      const k = e.key.toLowerCase();
+      if (k === ' ' || k === 'enter') { e.preventDefault(); App.doPlay(); }
+      else if (k === 'p') { App.doPass(); }
+      else if (k === 'h') { game.hint(); }
+      else if (k === 'm') { $('btn-sound').click(); }
+      else if (k === 'escape') { show('pause'); }
+    });
+    document.addEventListener('contextmenu', e => e.preventDefault());
+  };
+
+  App.doPlay = function () {
+    const cards = GM.ui.getSelected();
+    if (!cards.length) { GM.ui.toast('先点牌选上，再出牌'); return; }
+    const r = App.game.humanPlay(cards);
+    if (!r.ok) GM.ui.toast(r.msg);
+    else GM.ui.clearSelection();
+  };
+  App.doPass = function () {
+    const r = App.game.humanPass();
+    if (!r.ok) GM.ui.toast(r.msg);
+  };
+
+  App.start = function () {
+    App.game.newRound();
+    /* 发牌动画：逐张落下 */
+    const cards = [...$('hand').children];
+    cards.forEach((el, i) => {
+      el.classList.add('dealing');
+      el.style.animationDelay = (i * 22) + 'ms';
+    });
+    setTimeout(() => App.game.askBid(), 520);
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', App.boot);
+  else App.boot();
+})(window.GM);
+
+})();</script>
+</body>
+</html>
